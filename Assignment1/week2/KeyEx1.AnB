@@ -1,0 +1,38 @@
+Protocol: OpenAuthorization
+# First version with IdP-signed token.
+Types:
+  Agent A, B, P, ip;
+  Number F, NA;
+  Function pk, pw;
+
+Knowledge:
+  # Simplification: A can sign to authorize P, so A has a key pair in this model.
+  A: A, B, P,ip,pk, pw();
+  P: A, B, P,ip, pk, inv(pk(P));
+  B: A, B, P,ip, pk, inv(pk(B));
+  ip: A, B, P,ip,pk(ip) pk(A), pk(B), pk(P), inv(pk(ip));
+
+
+
+Actions:
+
+  # P asks A for authorization for some folder F (fresh challenge NA)
+  P -> A: A, B, P, F, NA
+
+  # A issues a capability token for P to access folder F at B.
+  #    The token is a signed statement by A, binding {A,P,B,F,NA}.
+  A -> P: {A, P, B, F, NA} inv(pk(A))
+
+  # P presents the token to B as proof of authorization.
+  P -> B: {A, P, B, F, NA} inv(pk(A))
+
+  #  If token checks out, B releases the photos of folder F to P.
+  #    (Encrypt to P so the intruder cannot read the photos.)
+  B -> P: {photos(F)} pk(P)
+
+Goals:
+
+  # Authorization/authentication-style goal: B should accept that A authorized P for (B,F,NA).
+  B authenticates A on P, B, F, NA
+  # Confidentiality of the folder content (only the intended principals learn it).
+  photos(F) secret between A, B, P
